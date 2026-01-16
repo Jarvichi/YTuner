@@ -65,6 +65,7 @@ Now, the list of supported **and tested** devices below is short, but I hope it 
   * Yamaha RX-A3000 (Tested by [sydvicous](https://github.com/sydvicous). Thank you.)
   * Yamaha DSP-Z7 (Tested by Beatrice / [TheBossME](https://github.com/TheBossME). Thank you.)
   * Yamaha NP-S2000  (Tested by [Ice64zzz](https://github.com/Ice64zzz). Thank you.)
+  * Yamaha R-N500 (Tested by [kauai68](https://github.com/kauai68). Thank you.)
 - Marantz
   * Marantz NR1604 (Tested by [jukonek](https://github.com/jukonek). Thank you.)
   * Marantz NR1607 (Tested by [brietman](https://github.com/brietman). Thank you.)
