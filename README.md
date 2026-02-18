@@ -2,7 +2,21 @@
 
 #### *"Everything should be made as simple as possible, but not simpler"* - Albert Einstein.
 
-# YTuner
+# YTuner (fork)
+
+> **This is a fork of [coffeegreg/YTuner](https://github.com/coffeegreg/YTuner).**
+> The `custom` branch adds the following on top of the upstream project:
+>
+> - **Libratone speaker support** — per-device preset files, Nginx reverse proxy to identify speakers by IP, and setup documentation ([doc/LIBRATONE_SETUP.md](doc/LIBRATONE_SETUP.md))
+> - **Web management UI** ([webui/](webui/)) — browser-based interface for managing stations, speakers, and stream links
+> - **Transcoding proxy** ([transcode/](transcode/)) — Python HTTP server that converts non-MP3 streams to MP3 via FFmpeg for devices that only support MP3
+> - **Helper scripts** ([script/](script/)) — backup, restore, and transcoded URL generation utilities
+> - **Deployment configs** — systemd service units ([systemd/](systemd/)) and Nginx reverse proxy config ([nginx/](nginx/))
+> - **Example configs** ([cfg/examples/](cfg/examples/)) — sanitized speaker preset XML template
+>
+> The upstream `master` branch is kept in sync with coffeegreg/YTuner. All customizations live on `custom`.
+
+---
 
 YTuner is a simple project inspired by [YCast](https://github.com/milaq/YCast) but rewritten from scratch and greatly improved.
 Designed to replace vTuner internet radio service and dedicated to all users of AVRs made by Yamaha, Denon, Onkyo, Marantz, Pioneer, Harman Kardon, Pro-Ject and others with built-in vTuner support.
