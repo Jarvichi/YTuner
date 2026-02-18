@@ -22,24 +22,48 @@ Libratone speakers have firmware-embedded preset IDs (like 3158, 13417, 80195, e
 
 ### 2. Device-Specific Configuration Files
 
-Each Libratone speaker has its own XML file in `/opt/ytuner/config/`:
-
-**Speaker 1: `/opt/ytuner/config/192.168.5.31.xml`**
-- Preset IDs: 3158, 13417, 80195, 36322, 24570
-- Mapped to: Capital FM, Heart London, Heart 80s, Gold UK, Radio Caroline
-
-**Speaker 2: `/opt/ytuner/config/192.168.5.11.xml`**
-- Preset IDs: 1357, 26128, 49272, 3159, 80195
-- Mapped to: Capital FM, Heart London, Heart 80s, Gold UK, Radio Caroline
+Each Libratone speaker has its own XML file in `/opt/ytuner/config/`.
+Different speakers have different firmware preset IDs, so each file maps the correct IDs to stations.
 
 ### 3. How It Works
 
-When a Libratone speaker presses preset button:
+When a Libratone speaker preset button is pressed:
 1. Speaker sends request: `Search.asp?sSearchtype=3&search=3158`
 2. Nginx forwards request with `Host: 192.168.5.31` (speaker's IP)
 3. YTuner checks if `/opt/ytuner/config/192.168.5.31.xml` exists
 4. If exists, prepends "UNB" to search ID → looks for `UNB3158` in that XML file
 5. Returns the matching station URL to the speaker
+
+### 4. Transcoding Proxy
+
+Libratone speakers only support MP3 playback. A transcoding proxy (`transcode-proxy.py`) runs on port 8888 and converts non-MP3 streams (AAC, HLS, etc.) to MP3 on the fly via FFmpeg.
+
+To use a non-MP3 stream, wrap the URL through the proxy:
+```
+http://192.168.5.180:8888/transcode?url=<URL-encoded stream URL>
+```
+
+Or use the helper script:
+```bash
+~/transcode-url.sh "https://example.com/stream.aac"
+~/transcode-url.sh "https://example.com/stream.aac" 192k   # custom bitrate
+```
+
+The proxy runs as a systemd service (`transcode-proxy.service`). Configuration via environment variables:
+- `TRANSCODE_PORT` (default 8888)
+- `TRANSCODE_BITRATE` (default 128k)
+- `TRANSCODE_MAX_CONCURRENT` (default 4)
+
+### 5. Web Management UI
+
+A web UI (`webui.py`) runs on port 8080 and provides a browser-based interface for:
+- Viewing and editing speaker preset assignments
+- Managing stream URLs and station names
+- Adding new speakers
+
+Access it at `http://192.168.5.180:8080`. It runs as a systemd service (`ytuner-webui.service`).
+
+This is the easiest way to manage speakers — no need to edit XML files by hand.
 
 ## Adding a New Libratone Speaker
 
@@ -55,7 +79,9 @@ Look for lines like: `192.168.5.XX - - ... "search=XXXXX"`
 
 ### Step 2: Create Device Configuration File
 
-Create `/opt/ytuner/config/192.168.5.XX.xml` (replace XX with speaker's IP):
+Use the web UI at `http://192.168.5.180:8080` to add the new speaker and assign stations to its presets.
+
+Alternatively, create `/opt/ytuner/config/192.168.5.XX.xml` manually (replace XX with speaker's last octet):
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -82,7 +108,7 @@ Create `/opt/ytuner/config/192.168.5.XX.xml` (replace XX with speaker's IP):
 **Important Notes:**
 - StationId MUST be `UNB` + the preset ID (e.g., `UNB3158`)
 - Use HTTP URLs, not HTTPS (Libratone doesn't support HTTPS)
-- Use MP3 codec streams (AAC may not work)
+- Streams must reach the speaker as MP3 — use the transcoding proxy for non-MP3 sources
 
 ### Step 3: Restart YTuner
 ```bash
@@ -91,7 +117,11 @@ sudo systemctl restart ytuner
 
 ## Customizing Stations
 
-### To Change a Station on a Speaker
+### Using the Web UI (recommended)
+
+Open `http://192.168.5.180:8080` in a browser to view and edit preset assignments for each speaker.
+
+### Manual Editing
 
 1. Edit the device's XML file:
 ```bash
@@ -103,7 +133,7 @@ sudo nano /opt/ytuner/config/192.168.5.31.xml
 3. Update the `StationName` and `StationUrl`
    - Keep the `StationId` unchanged (must remain `UNB[ID]`)
    - Use HTTP URLs only
-   - Use MP3 streams only
+   - For non-MP3 streams, wrap through the transcoding proxy
 
 4. Restart YTuner:
 ```bash
@@ -117,20 +147,20 @@ Search for stations on Radio Browser:
 curl -s "http://all.api.radio-browser.info/json/stations/search?name=STATION_NAME&countrycode=GB&codec=MP3&hidebroken=true" | python3 -c "import sys, json; stations = json.load(sys.stdin); [print(f\"{s['name']}: {s['url']}\") for s in stations[:5]]"
 ```
 
-Replace `STATION_NAME` with the station you're looking for.
+Replace `STATION_NAME` with the station you're looking for. Filter by `codec=MP3` to find streams that work directly, or use any codec and wrap through the transcoding proxy.
 
-## Station Compatibility
+## Stream Compatibility
 
-**✅ Compatible:**
-- HTTP URLs (http://)
-- MP3 codec
-- Direct stream URLs
+**Direct playback (no proxy needed):**
+- HTTP URLs with MP3 codec
 
-**❌ Not Compatible:**
-- HTTPS URLs (https://)
-- AAC codec (may not work)
-- HLS streams (.m3u8)
-- Playlist files (.m3u, .pls)
+**Via transcoding proxy:**
+- AAC, HLS (.m3u8), and other non-MP3 formats — the proxy converts them to MP3
+- HTTPS sources — the proxy handles TLS and forwards as HTTP MP3
+
+**Not supported:**
+- HTTPS URLs direct to speaker (speaker firmware doesn't support TLS)
+- DRM-protected streams
 
 ## Troubleshooting
 
@@ -148,12 +178,17 @@ Should show: `proxy_set_header Host $remote_addr;`
 
 1. Check if the stream URL works:
 ```bash
-timeout 3 curl http://stream-url-here | head -c 100
+timeout 3 curl -s http://stream-url-here | head -c 100
 ```
 
 2. Make sure the URL is HTTP, not HTTPS
 
-3. Check YTuner logs:
+3. For transcoded streams, check the proxy is running:
+```bash
+sudo systemctl status transcode-proxy
+```
+
+4. Check YTuner logs:
 ```bash
 tail -50 /var/log/ytuner.log
 ```
@@ -168,12 +203,17 @@ tail -50 /var/log/nginx/access.log | grep "192.168.5.XX"
 ### Restart services after changes
 
 ```bash
-# After changing ytuner.ini or station XML files:
+# After changing station XML files:
 sudo systemctl restart ytuner
 
 # After changing nginx config:
-sudo nginx -t
-sudo systemctl reload nginx
+sudo nginx -t && sudo systemctl reload nginx
+
+# After changing transcode proxy config:
+sudo systemctl restart transcode-proxy
+
+# After changing webui:
+sudo systemctl restart ytuner-webui
 ```
 
 ## File Locations
@@ -185,32 +225,19 @@ sudo systemctl reload nginx
 - **YTuner logs:** `/var/log/ytuner.log`
 - **Nginx config:** `/etc/nginx/sites-available/ytuner-proxy`
 - **Nginx logs:** `/var/log/nginx/access.log`
-
-## Current Configuration
-
-**Server:** 192.168.5.180
-**YTuner Version:** v1.2.6
-
-**Configured Speakers:**
-- 192.168.5.31 (Preset IDs: 3158, 13417, 80195, 36322, 24570)
-- 192.168.5.11 (Preset IDs: 1357, 26128, 49272, 3159, 80195)
-
-**Current Stations (Both Speakers):**
-1. Capital FM London - http://media-ice.musicradio.com/CapitalMP3
-2. Heart London - http://ice-sov.musicradio.com/HeartLondonMP3
-3. Heart 80s - http://media-ice.musicradio.com/Heart80sMP3
-4. Gold UK - http://media-ice.musicradio.com/GoldMP3
-5. Radio Caroline - http://78.129.202.200:8040/
+- **Transcoding proxy:** `/opt/ytuner/transcode-proxy.py`
+- **Web UI:** `/opt/ytuner/webui.py` (port 8080)
 
 ## Additional Resources
 
-- YTuner GitHub: https://github.com/coffeegreg/YTuner
+- YTuner upstream: https://github.com/coffeegreg/YTuner
 - Libratone Discussion: https://github.com/coffeegreg/YTuner/discussions/68
+- Libratone Issue: https://github.com/coffeegreg/YTuner/issues/58
 - Radio Browser API: http://all.api.radio-browser.info/
 
 ## Notes
 
-- This setup was configured on February 13, 2026
 - The solution works around Libratone's hardcoded preset IDs by using device-specific XML bookmark files
 - Each speaker can have different stations assigned to its presets
 - The configuration survives YTuner updates (XML files are in config directory)
+- Non-MP3 streams work via the transcoding proxy (FFmpeg)
