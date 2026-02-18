@@ -14,6 +14,14 @@
 > - **Deployment configs** — systemd service units ([systemd/](systemd/)) and Nginx reverse proxy config ([nginx/](nginx/))
 > - **Example configs** ([cfg/examples/](cfg/examples/)) — sanitized speaker preset XML template
 >
+> **Quick install** (Raspberry Pi / Debian):
+> ```bash
+> git clone https://github.com/Jarvichi/YTuner.git
+> cd YTuner && git checkout custom
+> sudo bash script/install.sh
+> ```
+> See [doc/INSTALL.md](doc/INSTALL.md) for full details.
+>
 > The upstream `master` branch is kept in sync with coffeegreg/YTuner. All customizations live on `custom`.
 
 ---
