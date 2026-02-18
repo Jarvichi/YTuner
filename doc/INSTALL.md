@@ -88,11 +88,9 @@ CommonBookmark=0
 Enable=0
 ```
 
-### 5. Patch IP addresses
+### 5. Set server IP (optional)
 
-Replace `192.168.5.180` with your server's IP in:
-- `/opt/ytuner/webui.py`
-- `/usr/local/bin/transcode-url.sh`
+The web UI and helper scripts auto-detect the server's LAN IP address. To override, set the `YTUNER_SERVER_IP` environment variable (e.g. in the ytuner-webui systemd unit or your shell profile).
 
 ### 6. Set up nginx
 

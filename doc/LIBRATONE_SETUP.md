@@ -16,7 +16,7 @@ Libratone speakers have firmware-embedded preset IDs (like 3158, 13417, 80195, e
   - Each speaker gets its own XML file based on its IP address
 
 **File: `/etc/nginx/sites-available/ytuner-proxy`**
-- Changed `proxy_set_header Host $remote_addr;` (was `192.168.5.180`)
+- Uses `proxy_set_header Host $remote_addr;` (not a static IP)
   - Uses each speaker's IP address as its unique device ID
   - Allows YTuner to serve different presets to different speakers
 
@@ -29,9 +29,9 @@ Different speakers have different firmware preset IDs, so each file maps the cor
 
 When a Libratone speaker preset button is pressed:
 1. Speaker sends request: `Search.asp?sSearchtype=3&search=3158`
-2. Nginx forwards request with `Host: 192.168.5.31` (speaker's IP)
-3. YTuner checks if `/opt/ytuner/config/192.168.5.31.xml` exists
-4. If exists, prepends "UNB" to search ID → looks for `UNB3158` in that XML file
+2. Nginx forwards request with `Host: <speaker-ip>` (e.g. `Host: 192.168.1.50`)
+3. YTuner checks if `/opt/ytuner/config/<speaker-ip>.xml` exists
+4. If exists, prepends "UNB" to search ID and looks for `UNB3158` in that XML file
 5. Returns the matching station URL to the speaker
 
 ### 4. Transcoding Proxy
@@ -40,13 +40,13 @@ Libratone speakers only support MP3 playback. A transcoding proxy (`transcode-pr
 
 To use a non-MP3 stream, wrap the URL through the proxy:
 ```
-http://192.168.5.180:8888/transcode?url=<URL-encoded stream URL>
+http://<your-server-ip>:8888/transcode?url=<URL-encoded stream URL>
 ```
 
 Or use the helper script:
 ```bash
-~/transcode-url.sh "https://example.com/stream.aac"
-~/transcode-url.sh "https://example.com/stream.aac" 192k   # custom bitrate
+transcode-url.sh "https://example.com/stream.aac"
+transcode-url.sh "https://example.com/stream.aac" 192k   # custom bitrate
 ```
 
 The proxy runs as a systemd service (`transcode-proxy.service`). Configuration via environment variables:
@@ -61,7 +61,7 @@ A web UI (`webui.py`) runs on port 8080 and provides a browser-based interface f
 - Managing stream URLs and station names
 - Adding new speakers
 
-Access it at `http://192.168.5.180:8080`. It runs as a systemd service (`ytuner-webui.service`).
+Access it at `http://<your-server-ip>:8080`. It runs as a systemd service (`ytuner-webui.service`).
 
 This is the easiest way to manage speakers — no need to edit XML files by hand.
 
@@ -75,13 +75,13 @@ This is the easiest way to manage speakers — no need to edit XML files by hand
 ```bash
 tail -100 /var/log/nginx/access.log | grep "sSearchtype=3"
 ```
-Look for lines like: `192.168.5.XX - - ... "search=XXXXX"`
+Look for lines like: `<speaker-ip> - - ... "search=XXXXX"`
 
 ### Step 2: Create Device Configuration File
 
-Use the web UI at `http://192.168.5.180:8080` to add the new speaker and assign stations to its presets.
+Use the web UI at `http://<your-server-ip>:8080` to add the new speaker and assign stations to its presets.
 
-Alternatively, create `/opt/ytuner/config/192.168.5.XX.xml` manually (replace XX with speaker's last octet):
+Alternatively, create `/opt/ytuner/config/<speaker-ip>.xml` manually:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -119,13 +119,13 @@ sudo systemctl restart ytuner
 
 ### Using the Web UI (recommended)
 
-Open `http://192.168.5.180:8080` in a browser to view and edit preset assignments for each speaker.
+Open `http://<your-server-ip>:8080` in a browser to view and edit preset assignments for each speaker.
 
 ### Manual Editing
 
 1. Edit the device's XML file:
 ```bash
-sudo nano /opt/ytuner/config/192.168.5.31.xml
+sudo nano /opt/ytuner/config/<speaker-ip>.xml
 ```
 
 2. Find the preset you want to change (by StationId)
@@ -167,7 +167,7 @@ Replace `STATION_NAME` with the station you're looking for. Filter by `codec=MP3
 ### Speaker plays the same station for all presets
 
 1. Check that `CommonBookmark=0` in `/opt/ytuner/ytuner.ini`
-2. Check that device XML file exists: `ls /opt/ytuner/config/192.168.5.XX.xml`
+2. Check that device XML file exists: `ls /opt/ytuner/config/<speaker-ip>.xml`
 3. Check nginx config uses `$remote_addr`:
 ```bash
 grep "proxy_set_header Host" /etc/nginx/sites-available/ytuner-proxy
@@ -197,7 +197,7 @@ tail -50 /var/log/ytuner.log
 
 Check nginx access log:
 ```bash
-tail -50 /var/log/nginx/access.log | grep "192.168.5.XX"
+tail -50 /var/log/nginx/access.log | grep "<speaker-ip>"
 ```
 
 ### Restart services after changes
@@ -221,7 +221,7 @@ sudo systemctl restart ytuner-webui
 - **YTuner config:** `/opt/ytuner/ytuner.ini`
 - **YTuner binary:** `/opt/ytuner/ytuner`
 - **Station lists:** `/opt/ytuner/config/stations.ini`
-- **Device configs:** `/opt/ytuner/config/192.168.5.XX.xml`
+- **Device configs:** `/opt/ytuner/config/<speaker-ip>.xml`
 - **YTuner logs:** `/var/log/ytuner.log`
 - **Nginx config:** `/etc/nginx/sites-available/ytuner-proxy`
 - **Nginx logs:** `/var/log/nginx/access.log`

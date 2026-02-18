@@ -3,8 +3,9 @@
 # Usage: ./transcode-url.sh <stream_url> [bitrate]
 # Example: ./transcode-url.sh "https://example.com/stream.aac" 192k
 
-PROXY_HOST="192.168.5.180"
-PROXY_PORT="8888"
+PROXY_HOST="${YTUNER_SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+PROXY_HOST="${PROXY_HOST:-127.0.0.1}"
+PROXY_PORT="${TRANSCODE_PORT:-8888}"
 
 if [ -z "$1" ]; then
     echo "Usage: $0 <stream_url> [bitrate]"
