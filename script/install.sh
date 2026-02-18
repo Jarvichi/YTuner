@@ -138,16 +138,7 @@ sed -i 's/^WebServerIPAddress=.*/WebServerIPAddress=127.0.0.1/' "${INI}"
 
 ok "ytuner.ini configured (port 18081, no DNS, bookmarks per-device)"
 
-# ── 8. Patch webui.py — replace hardcoded IP ────────────────────────
-info "Patching webui.py with server IP ${SERVER_IP}..."
-sed -i "s/192\.168\.5\.180/${SERVER_IP}/g" "${INSTALL_DIR}/webui.py"
-ok "webui.py patched"
-
-# ── 9. Patch transcode-url.sh — replace hardcoded IP ────────────────
-sed -i "s/192\.168\.5\.180/${SERVER_IP}/g" /usr/local/bin/transcode-url.sh
-ok "transcode-url.sh patched"
-
-# ── 10. Install nginx config ────────────────────────────────────────
+# ── 8. Install nginx config ──────────────────────────────────────────
 info "Installing nginx config..."
 cp "${REPO_DIR}/nginx/ytuner-proxy" /etc/nginx/sites-available/ytuner-proxy
 
@@ -164,9 +155,14 @@ info "Installing systemd service units..."
 cp "${REPO_DIR}/systemd/ytuner.service" /etc/systemd/system/ytuner.service
 cp "${REPO_DIR}/systemd/transcode-proxy.service" /etc/systemd/system/transcode-proxy.service
 
-# Patch webui service with actual username
+# Patch webui service with actual username and server IP
 sed "s/User=andrew/User=${SERVICE_USER}/; s/Group=andrew/Group=${SERVICE_USER}/" \
     "${REPO_DIR}/systemd/ytuner-webui.service" > /etc/systemd/system/ytuner-webui.service
+# Inject YTUNER_SERVER_IP so the web UI and transcode-url.sh know the server address
+if ! grep -q "YTUNER_SERVER_IP" /etc/systemd/system/ytuner-webui.service; then
+    sed -i "/^\[Service\]/a Environment=YTUNER_SERVER_IP=${SERVER_IP}" \
+        /etc/systemd/system/ytuner-webui.service
+fi
 
 systemctl daemon-reload
 ok "Systemd units installed"

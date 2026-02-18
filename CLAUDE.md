@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YTuner is a lightweight vTuner internet radio replacement service for AVR devices (Yamaha, Denon, Pioneer, Marantz, etc.). It runs on a Raspberry Pi at 192.168.5.180, serving internet radio to vintage network-connected audio receivers and Libratone speakers.
+YTuner is a lightweight vTuner internet radio replacement service for AVR devices (Yamaha, Denon, Pioneer, Marantz, etc.). It runs on a Raspberry Pi or Debian server, serving internet radio to vintage network-connected audio receivers and Libratone speakers.
 
 The project consists of:
 - **YTuner** (Free Pascal) — the main vTuner-compatible server installed at `/opt/ytuner/`
@@ -41,7 +41,7 @@ Sits in front of YTuner. Config at `/etc/nginx/sites-available/ytuner-proxy`. Se
 | YTuner main config | `/opt/ytuner/ytuner.ini` |
 | AVR device config | `/opt/ytuner/config/avr.ini` |
 | Custom stations | `/opt/ytuner/config/stations.ini` |
-| Device-specific XMLs | `/opt/ytuner/config/192.168.5.XX.xml` |
+| Device-specific XMLs | `/opt/ytuner/config/<speaker-ip>.xml` |
 | YTuner source code | `~/ytuner-source/src/` |
 | Transcode proxy | `~/transcode-proxy.py` |
 | Transcode service | `~/transcode-proxy.service` |
@@ -93,7 +93,7 @@ Libratone speakers have firmware-hardcoded preset IDs. Each speaker needs a devi
 - Streams must be HTTP (not HTTPS) and MP3 codec
 - Use the transcode proxy for non-MP3 streams
 
-See `~/YTUNER_LIBRATONE_SETUP.md` for full details. Currently configured speakers: 192.168.5.31, 192.168.5.11.
+See `doc/LIBRATONE_SETUP.md` for full details.
 
 ## Station File Formats
 
