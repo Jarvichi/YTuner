@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Example Libratone speaker preset file.
+     Copy to /opt/ytuner/config/<SPEAKER_IP>.xml and customise.
+     StationId must be UNB + the preset ID from the speaker firmware.
+     Use the transcode proxy URL for non-MP3 streams. -->
+<ListOfItems>
+  <ItemCount>3</ItemCount>
+  <Item>
+    <ItemType>Station</ItemType>
+    <StationId>UNB3158</StationId>
+    <StationName>Example Station 1</StationName>
+    <StationUrl>http://YTUNER_IP:8888/transcode?url=http%3A%2F%2Fexample.com%2Fstream</StationUrl>
+    <StationDesc>Preset 1</StationDesc>
+    <Logo></Logo>
+    <StationFormat>Pop</StationFormat>
+    <StationLocation></StationLocation>
+    <StationBandWidth></StationBandWidth>
+    <StationMime></StationMime>
+    <Relia>3</Relia>
+    <Bookmark></Bookmark>
+  </Item>
+  <Item>
+    <ItemType>Station</ItemType>
+    <StationId>UNB13417</StationId>
+    <StationName>Example Station 2 (direct MP3)</StationName>
+    <StationUrl>http://example.com/stream.mp3</StationUrl>
+    <StationDesc>Preset 2</StationDesc>
+    <Logo></Logo>
+    <StationFormat>Rock</StationFormat>
+    <StationLocation></StationLocation>
+    <StationBandWidth></StationBandWidth>
+    <StationMime></StationMime>
+    <Relia>3</Relia>
+    <Bookmark></Bookmark>
+  </Item>
+  <Item>
+    <ItemType>Station</ItemType>
+    <StationId>UNB80195</StationId>
+    <StationName>Example Station 3</StationName>
+    <StationUrl>http://example.com/another-stream.mp3</StationUrl>
+    <StationDesc>Preset 3</StationDesc>
+    <Logo></Logo>
+    <StationFormat>Classic</StationFormat>
+    <StationLocation></StationLocation>
+    <StationBandWidth></StationBandWidth>
+    <StationMime></StationMime>
+    <Relia>3</Relia>
+    <Bookmark></Bookmark>
+  </Item>
+</ListOfItems>
