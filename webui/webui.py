@@ -38,12 +38,26 @@ STATIONS_INI = os.path.join(CONFIG_DIR, "stations.ini")
 SPEAKERS_JSON = os.path.join(DATA_DIR, "speakers.json")
 LINKS_JSON = os.path.join(DATA_DIR, "links.json")
 LOG_FILE = "/var/log/ytuner.log"
-TRANSCODE_PROXY = "http://192.168.5.180:8888/transcode?url="
-SERVER_IP = "192.168.5.180"
+TRANSCODE_PORT = os.environ.get("TRANSCODE_PORT", "8888")
 
-DEFAULT_LINKS = [
-    {"name": "Pi-hole", "url": f"http://{SERVER_IP}:8081/admin", "desc": "DNS ad blocker"},
-]
+
+def _detect_ip():
+    """Auto-detect the server's LAN IP address."""
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
+SERVER_IP = os.environ.get("YTUNER_SERVER_IP") or _detect_ip()
+TRANSCODE_PROXY = f"http://{SERVER_IP}:{TRANSCODE_PORT}/transcode?url="
+
+DEFAULT_LINKS = []
 
 # ── Discovery state (shared across threads) ─────────────────────────────────
 
@@ -414,7 +428,11 @@ class WebUIHandler(BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
 
         if path == "/":
-            self._send_html(HTML_PAGE)
+            config_script = (
+                f'<script>const SERVER_IP="{SERVER_IP}";'
+                f'const TRANSCODE_PORT="{TRANSCODE_PORT}";</script>'
+            )
+            self._send_html(HTML_PAGE.replace("</head>", config_script + "</head>"))
         elif path == "/api/speakers":
             self._handle_list_speakers()
         elif path.startswith("/api/speakers/"):
@@ -1285,7 +1303,7 @@ label { font-size: 0.8rem; color: var(--text2); margin-bottom: 4px; display: blo
     </div>
     <div class="form-group mb">
       <label>URL</label>
-      <input type="url" id="link-url" placeholder="e.g. http://192.168.5.180:8081/admin">
+      <input type="url" id="link-url" placeholder="e.g. http://192.168.1.100:8081/admin">
     </div>
     <div class="form-group mb">
       <label>Description (optional)</label>
@@ -1698,7 +1716,7 @@ function addSearchResult(idx) {
   document.getElementById('stn-category').value = '';
   document.getElementById('stn-name').value = s.name;
   if (s.needs_transcode) {
-    document.getElementById('stn-url').value = `http://192.168.5.180:8888/transcode?url=${encodeURIComponent(s.url)}`;
+    document.getElementById('stn-url').value = `http://${SERVER_IP}:${TRANSCODE_PORT}/transcode?url=${encodeURIComponent(s.url)}`;
   } else {
     document.getElementById('stn-url').value = s.url;
   }
@@ -1969,7 +1987,7 @@ async function stopDiscovery() {
 let activePreviewBtn = null;
 
 function unwrapTranscodeUrl(url) {
-  // Transcoded URLs look like http://192.168.5.180:8888/transcode?url=ENCODED
+  // Transcoded URLs look like http://SERVER_IP:8888/transcode?url=ENCODED
   // Browser can play the original stream natively (AAC, OGG, etc.)
   // so unwrap to avoid cross-origin issues with the transcode proxy.
   try {
