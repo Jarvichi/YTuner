@@ -1,0 +1,14 @@
+[Unit]
+Description=YTuner Service
+After=network.target
+
+[Service]
+ExecStart=/opt/ytuner/ytuner
+WorkingDirectory=/opt/ytuner
+Restart=always
+RestartSec=2
+StandardOutput=append:/var/log/ytuner.log
+StandardError=append:/var/log/ytuner.log
+
+[Install]
+WantedBy=multi-user.target

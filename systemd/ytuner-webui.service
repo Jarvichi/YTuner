@@ -1,0 +1,17 @@
+[Unit]
+Description=YTuner Web Management Interface
+After=network.target ytuner.service
+Wants=ytuner.service
+
+[Service]
+Type=simple
+User=andrew
+Group=andrew
+ExecStart=/usr/bin/python3 /opt/ytuner/webui.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
