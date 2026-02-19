@@ -44,17 +44,19 @@ If you prefer to install manually, follow these steps.
 
 ```bash
 sudo apt update
-sudo apt install nginx ffmpeg sqlite3 libsqlite3-0 python3 wget libarchive-tools
+sudo apt install nginx ffmpeg sqlite3 libsqlite3-0 python3 wget unzip
 ```
 
 ### 2. Download and extract YTuner
 
 ```bash
 # For aarch64 (Pi 4/5 with 64-bit OS):
-wget https://github.com/coffeegreg/YTuner/releases/download/v1.2.6/ytuner-1.2.6-linux-aarch64.tar.xz
+wget https://github.com/coffeegreg/YTuner/releases/download/1.2.6/ytuner-1.2.6-aarch64-arm64-armv7-armv8-armv9-linux.zip
 sudo mkdir -p /opt/ytuner
-sudo bsdtar -xf ytuner-1.2.6-linux-aarch64.tar.xz -C /opt/ytuner --strip-components=1
+sudo unzip -q ytuner-1.2.6-aarch64-arm64-armv7-armv8-armv9-linux.zip -d /tmp/ytuner-extract
+sudo cp -a /tmp/ytuner-extract/ytuner-*/* /opt/ytuner/
 sudo chmod +x /opt/ytuner/ytuner
+rm -rf /tmp/ytuner-extract
 ```
 
 ### 3. Copy fork files
