@@ -9,7 +9,7 @@
 set -euo pipefail
 
 YTUNER_VERSION="1.2.6"
-YTUNER_RELEASE_BASE="https://github.com/coffeegreg/YTuner/releases/download/v${YTUNER_VERSION}"
+YTUNER_RELEASE_BASE="https://github.com/coffeegreg/YTuner/releases/download/${YTUNER_VERSION}"
 INSTALL_DIR="/opt/ytuner"
 LOG_FILE="/var/log/ytuner.log"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -35,10 +35,10 @@ fi
 
 ARCH="$(uname -m)"
 case "${ARCH}" in
-    aarch64)     YTUNER_ARCHIVE="ytuner-${YTUNER_VERSION}-linux-aarch64.tar.xz" ;;
-    armv7l|armhf) YTUNER_ARCHIVE="ytuner-${YTUNER_VERSION}-linux-armhf.tar.xz"  ;;
-    x86_64)      YTUNER_ARCHIVE="ytuner-${YTUNER_VERSION}-linux-amd64.tar.xz"   ;;
-    *)           die "Unsupported architecture: ${ARCH}" ;;
+    aarch64)      YTUNER_ARCHIVE="ytuner-${YTUNER_VERSION}-aarch64-arm64-armv7-armv8-armv9-linux.zip" ;;
+    armv7l|armhf) YTUNER_ARCHIVE="ytuner-${YTUNER_VERSION}-armhf-armv7-armv8-armv9-linux.zip"        ;;
+    x86_64)       YTUNER_ARCHIVE="ytuner-${YTUNER_VERSION}-x86_64-linux.zip"                         ;;
+    *)            die "Unsupported architecture: ${ARCH}" ;;
 esac
 ok "Architecture: ${ARCH} -> ${YTUNER_ARCHIVE}"
 
@@ -85,7 +85,7 @@ ok "Service user: ${SERVICE_USER}"
 echo
 info "Installing required packages..."
 apt-get update -qq
-apt-get install -y -qq nginx ffmpeg sqlite3 libsqlite3-0 python3 wget libarchive-tools 2>&1 | tail -1
+apt-get install -y -qq nginx ffmpeg sqlite3 libsqlite3-0 python3 wget unzip 2>&1 | tail -1
 ok "Packages installed"
 
 # ── 5. Download & extract YTuner binary ──────────────────────────────
@@ -96,7 +96,8 @@ else
     TMP_DIR="$(mktemp -d)"
     wget -q "${YTUNER_RELEASE_BASE}/${YTUNER_ARCHIVE}" -O "${TMP_DIR}/${YTUNER_ARCHIVE}"
     mkdir -p "${INSTALL_DIR}"
-    bsdtar -xf "${TMP_DIR}/${YTUNER_ARCHIVE}" -C "${INSTALL_DIR}" --strip-components=1
+    unzip -q "${TMP_DIR}/${YTUNER_ARCHIVE}" -d "${TMP_DIR}/extract"
+    cp -a "${TMP_DIR}"/extract/ytuner-*/* "${INSTALL_DIR}/"
     rm -rf "${TMP_DIR}"
     chmod +x "${INSTALL_DIR}/ytuner"
     ok "YTuner extracted to ${INSTALL_DIR}"
